@@ -14,7 +14,7 @@ type WorkerProgress struct {
 	Progress float64
 }
 
-// isPrime checks if a number is prime.
+// isPrime returns true if n is a prime number, otherwise false. It uses trial division with optimizations for small numbers and skips multiples of 2 and 3.
 func isPrime(n int) bool {
 	if n <= 1 {
 		return false
@@ -36,7 +36,7 @@ func isPrime(n int) bool {
 	return true
 }
 
-// isPrimeWorker checks a range of numbers for primality and sends found primes to a channel.
+// isPrimeWorker finds prime numbers within a specified range and sends them to a channel, periodically reporting progress updates for the assigned worker.
 func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, progressChan chan<- WorkerProgress, workerID int) {
 	defer wg.Done()
 
@@ -58,6 +58,7 @@ func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, pro
 	progressChan <- WorkerProgress{WorkerID: workerID, Progress: 100.0}
 }
 
+// main concurrently finds all prime numbers in a specified range using multiple worker goroutines, tracks their progress, and outputs timing and sample results.
 func main() {
 	start := 1
 	end := 100_000
