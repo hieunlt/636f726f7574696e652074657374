@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// isPrime checks if a number is prime.
+// isPrime determines whether the given integer n is a prime number. Returns true if n is prime, otherwise false.
 func isPrime(n int) bool {
 	if n <= 1 {
 		return false
@@ -30,7 +30,8 @@ func isPrime(n int) bool {
 	return true
 }
 
-// isPrimeWorker checks a range of numbers for primality and sends found primes to a channel.
+// isPrimeWorker finds prime numbers within a specified range and sends them to a channel.
+// It periodically reports progress as a percentage, encoding the worker ID in each update, and signals completion when done.
 func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, progressChan chan<- float64, workerID int) {
 	defer wg.Done()
 
@@ -51,6 +52,7 @@ func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, pro
 	progressChan <- float64(workerID)*100 + 100.0 // Send final progress update
 }
 
+// main concurrently finds all prime numbers in a specified range using multiple worker goroutines, reports progress, and displays summary statistics upon completion.
 func main() {
 	start := 1
 	end := 100_000
