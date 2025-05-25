@@ -8,13 +8,7 @@ import (
 	"time"
 )
 
-// WorkerProgress holds progress information for a worker
-type WorkerProgress struct {
-	WorkerID int
-	Progress float64
-}
-
-// isPrime returns true if n is a prime number, otherwise false. It uses trial division with optimizations for small numbers and skips multiples of 2 and 3.
+// isPrime checks if a number is prime.
 func isPrime(n int) bool {
 	if n <= 1 {
 		return false
@@ -36,8 +30,8 @@ func isPrime(n int) bool {
 	return true
 }
 
-// isPrimeWorker finds prime numbers within a specified range and sends them to a channel, periodically reporting progress updates for the assigned worker.
-func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, progressChan chan<- WorkerProgress, workerID int) {
+// isPrimeWorker checks a range of numbers for primality and sends found primes to a channel.
+func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, progressChan chan<- float64, workerID int) {
 	defer wg.Done()
 
 	total := end - start + 1
@@ -51,23 +45,21 @@ func isPrimeWorker(start, end int, primeChan chan<- int, wg *sync.WaitGroup, pro
 
 		if processed%1000 == 0 {
 			progress := float64(processed) / float64(total) * 100
-			progressChan <- WorkerProgress{WorkerID: workerID, Progress: progress}
+			progressChan <- float64(workerID)*100 + progress
 		}
 	}
-	// Send final 100% progress update for this worker
-	progressChan <- WorkerProgress{WorkerID: workerID, Progress: 100.0}
+	progressChan <- float64(workerID)*100 + 100.0 // Send final progress update
 }
 
-// main concurrently finds all prime numbers in a specified range using multiple worker goroutines, tracks their progress, and outputs timing and sample results.
 func main() {
 	start := 1
 	end := 100_000
 	numWorkers := 4
 	progressStep := 10.0
-	sampleSize := 5
+	peakNum := 5
 
-	primeChan := make(chan int)
-	progressChan := make(chan WorkerProgress)
+	primeChan := make(chan int, 10000)
+	progressChan := make(chan float64)
 	var wg sync.WaitGroup
 
 	startTime := time.Now()
@@ -80,7 +72,8 @@ func main() {
 		lastDisplayedProgress := 0.0
 
 		for progress := range progressChan {
-			progressMap[progress.WorkerID] = progress.Progress
+			workerID := int(progress) / 100
+			progressMap[workerID] = progress - float64(workerID)*100
 
 			totalProgress := 0.0
 			for _, p := range progressMap {
@@ -123,11 +116,11 @@ func main() {
 	}
 
 	// Print results
-	fmt.Println("\n\nTime taken:", time.Since(startTime))
+	fmt.Println("\n\nCompleted, time taken:", time.Since(startTime))
 	fmt.Printf("Total prime numbers found: %d\n", len(primes))
 
-	// Peek the results
+	// Peak the results
 	slices.Sort(primes)
-	fmt.Printf("First %d prime numbers found: %v\n", sampleSize, primes[:sampleSize])
-	fmt.Printf("Last %d prime numbers found: %v\n", sampleSize, primes[len(primes)-sampleSize:])
+	fmt.Printf("First %d prime numbers found: %v\n", peakNum, primes[:peakNum])
+	fmt.Printf("Last %d prime numbers found: %v\n", peakNum, primes[len(primes)-peakNum:])
 }
